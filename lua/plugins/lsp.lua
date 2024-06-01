@@ -51,7 +51,7 @@ return {
       },
       setup = {
         ruff_lsp = function()
-          require("lazyvim.util").on_attach(function(client, _)
+          require("lazyvim.util").lsp.on_attach(function(client, _)
             if client.name == "ruff_lsp" then
               -- Disable hover in favor of Pyright
               client.server_capabilities.hoverProvider = false
@@ -70,27 +70,81 @@ return {
         "shfmt",
         "python-lsp-server",
         "ruff-lsp",
+        "blue",
       },
     },
   },
 
   {
-    "nvimtools/none-ls.nvim",
+    "stevearc/conform.nvim",
     opts = function()
-      local nls = require("null-ls")
-      --opts.sources = vim.list_extend(opts.sources, {
+      local plugin = require("lazy.core.config").plugins["conform.nvim"]
+      if plugin.config ~= M.setup then
+        Util.error({
+          "Don't set `plugin.config` for `conform.nvim`.\n",
+          "This will break **LazyVim** formatting.\n",
+          "Please refer to the docs at https://www.lazyvim.org/plugins/formatting",
+        }, { title = "LazyVim" })
+      end
+      ---@class ConformOpts
       return {
-        root_dir = require("null-ls.utils").root_pattern(".null-ls-root", ".neoconf.json", "Makefile", ".git"),
-        sources = {
-          --nls.builtins.formatting.black,
-          nls.builtins.formatting.blue,
-          nls.builtins.formatting.stylua,
-          nls.builtins.formatting.prettier,
-          nls.builtins.formatting.gofmt,
-          nls.builtins.formatting.isort,
+        -- LazyVim will use these options when formatting with the conform.nvim formatter
+        format = {
+          timeout_ms = 1000,
+        },
+        formatters_by_ft = {
+          blue = { "blue" },
+          lua = { "stylua" },
+          fish = { "fish_indent" },
+          sh = { "shfmt" },
+          gofmt = { "gofmt" },
+        },
+        -- LazyVim will merge the options you set here with builtin formatters.
+        -- You can also define any custom formatters here.
+        ---@type table<string,table>
+        formatters = {
+          injected = { options = { ignore_errors = true } },
+          -- # Example of using dprint only when a dprint.json file is present
+          -- dprint = {
+          --   condition = function(ctx)
+          --     return vim.fs.find({ "dprint.json" }, { path = ctx.filename, upward = true })[1]
+          --   end,
+          -- },
+          --
+          -- # Example of using shfmt with extra args
+          -- shfmt = {
+          --   extra_args = { "-i", "2", "-ci" },
+          -- },
         },
       }
     end,
+  },
+
+  {
+    "mfussenegger/nvim-lint",
+    opts = {
+      -- Event to trigger linters
+      events = { "BufWritePost", "BufReadPost", "InsertLeave" },
+      linters_by_ft = {
+        stylua = { "stylua" },
+        prettier = { "prettier" },
+        gofmt = { "gofmt" },
+        isort = { "isort" },
+      },
+      -- LazyVim extension to easily override linter options
+      -- or add custom linters.
+      ---@type table<string,table>
+      linters = {
+        -- -- Example of using selene only when a selene.toml file is present
+        -- selene = {
+        --   -- `condition` is another LazyVim extension that allows you to
+        --   -- dynamically enable/disable linters based on the context.
+        --   condition = function(ctx)
+        --     return vim.fs.find({ "selene.toml" }, { path = ctx.filename, upward = true })[1]
+        --   end,
+        -- },
+      },
+    },
   },
 
   {
